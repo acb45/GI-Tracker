@@ -1,0 +1,21 @@
+{
+  "name": "GI Tracker - Symptom Journal",
+  "short_name": "GI Tracker",
+  "description": "Daily GI symptom and medication tracker",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0d9488",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%230d9488'/%3E%3Cpath d='M256 80c-48 0-80 32-80 72 0 32 16 56 16 56s-48 24-48 96c0 56 24 96 24 96s-16 24-16 48c0 32 40 48 104 48s104-16 104-48c0-24-16-48-16-48s24-40 24-96c0-72-48-96-48-96s16-24 16-56c0-40-32-72-80-72z' fill='white' opacity='0.9'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%230d9488'/%3E%3Cpath d='M256 80c-48 0-80 32-80 72 0 32 16 56 16 56s-48 24-48 96c0 56 24 96 24 96s-16 24-16 48c0 32 40 48 104 48s104-16 104-48c0-24-16-48-16-48s24-40 24-96c0-72-48-96-48-96s16-24 16-56c0-40-32-72-80-72z' fill='white' opacity='0.9'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
