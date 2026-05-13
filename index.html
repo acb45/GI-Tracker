@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#0d9488">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GI Tracker">
+<link rel="manifest" href="manifest.json">
+<title>GI Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+:root{--primary:#0d9488;--primary-dark:#0f766e;--bg:#f0fdfa;--card:#fff;--text:#0f172a;--text2:#475569;--border:#e2e8f0;--danger:#ef4444;--warn:#f59e0b;--good:#22c55e;--radius:12px;--shadow:0 1px 3px rgba(0,0,0,.1)}
+@media(prefers-color-scheme:dark){:root{--bg:#0f172a;--card:#1e293b;--text:#e2e8f0;--text2:#94a3b8;--border:#334155;--shadow:0 1px 3px rgba(0,0,0,.3)}}
+.dark{--bg:#0f172a;--card:#1e293b;--text:#e2e8f0;--text2:#94a3b8;--border:#334155;--shadow:0 1px 3px rgba(0,0,0,.3)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:70px;transition:background .3s,color .3s}
+.tab-content{display:none;padding:16px;max-width:600px;margin:0 auto;animation:fadeIn .2s}
+.tab-content.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+.card h3{font-size:15px;color:var(--primary);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+h2.page-title{font-size:20px;font-weight:700;margin-bottom:14px;color:var(--text)}
+input,select,textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--bg);color:var(--text);transition:border .2s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary)}
+textarea{resize:vertical;min-height:60px}
+label{font-size:13px;color:var(--text2);display:block;margin-bottom:4px}
+.row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.row>*{flex:1}
+button{cursor:pointer;border:none;border-radius:8px;font-size:14px;padding:10px 16px;transition:all .15s}
+.btn-primary{background:var(--primary);color:#fff;font-weight:600}
+.btn-primary:active{background:var(--primary-dark);transform:scale(.97)}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text)}
+.btn-outline.active{border-color:var(--primary);background:rgba(13,148,136,.1);color:var(--primary)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-sm{padding:6px 12px;font-size:13px}
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.pill{padding:6px 12px;border-radius:20px;font-size:13px;border:1.5px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;transition:all .15s;user-select:none}
+.pill.active{border-color:var(--primary);background:rgba(13,148,136,.15);color:var(--primary);font-weight:600}
+.range-row{display:flex;align-items:center;gap:8px}
+.range-row input[type=range]{flex:1}
+.range-val{min-width:28px;text-align:center;font-weight:700;color:var(--primary)}
+.water-row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.water-btn{width:36px;height:36px;border-radius:50%;border:2px solid var(--primary);background:transparent;color:var(--primary);font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+.water-btn.filled{background:var(--primary);color:#fff}
+.mood-row{display:flex;gap:8px;justify-content:center}
+.mood-btn{font-size:28px;padding:6px;border-radius:10px;border:2px solid transparent;background:none;cursor:pointer;transition:all .15s}
+.mood-btn.active{border-color:var(--primary);background:rgba(13,148,136,.12)}
+.exercise-row,.sleep-row,.stress-symp-row{display:flex;gap:6px;flex-wrap:wrap}
+.exercise-row button,.sleep-row button,.stress-symp-row button{flex:1;min-width:60px}
+.bm-entry{border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px;position:relative}
+.bm-delete{position:absolute;top:8px;right:8px;background:none;color:var(--danger);font-size:18px;padding:2px 6px;border:none;cursor:pointer}
+.med-row{display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap}
+.med-row input{flex:1;min-width:0}
+.med-row select{width:auto;flex:0 0 auto}
+.med-helped{display:flex;gap:4px}
+.med-helped button{font-size:18px;padding:4px 8px;background:none;border:1.5px solid var(--border);border-radius:6px;cursor:pointer}
+.med-helped button.active{border-color:var(--primary);background:rgba(13,148,136,.12)}
+.save-btn{width:100%;padding:14px;font-size:16px;margin-top:8px}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--primary);color:#fff;padding:12px 24px;border-radius:10px;font-weight:600;z-index:9999;transition:transform .3s;font-size:14px}
+.toast.show{transform:translateX(-50%) translateY(0)}
+nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);display:flex;z-index:100;padding:4px 0 env(safe-area-inset-bottom,4px)}
+nav button{flex:1;background:none;border:none;padding:6px 0;font-size:10px;color:var(--text2);display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;transition:color .15s}
+nav button .icon{font-size:20px}
+nav button.active{color:var(--primary);font-weight:700}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.cal-header{font-size:11px;color:var(--text2);font-weight:600;padding:4px}
+.cal-day{padding:8px 4px;border-radius:8px;font-size:13px;cursor:pointer;position:relative;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cal-day:hover{background:rgba(13,148,136,.08)}
+.cal-day.today{font-weight:700;border:1.5px solid var(--primary)}
+.cal-day .dot{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:6px;height:6px;border-radius:50%}
+.cal-day .dot.green{background:var(--good)}.cal-day .dot.yellow{background:var(--warn)}.cal-day .dot.red{background:var(--danger)}
+.cal-day.empty{cursor:default}
+.cal-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.cal-nav h3{font-size:16px}
+.chart-container{position:relative;height:220px;margin:12px 0}
+.range-selector{display:flex;gap:6px;margin-bottom:12px}
+.range-selector button.active{background:var(--primary);color:#fff}
+.summary-stat{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.summary-stat:last-child{border:none}
+.stat-label{color:var(--text2);font-size:13px}
+.stat-val{font-weight:700;color:var(--primary)}
+.export-row{display:flex;gap:8px;margin-top:12px}
+.export-row button{flex:1}
+.settings-row{margin-bottom:12px}
+.settings-row label{font-weight:600;margin-bottom:6px}
+.saved-med{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)}
+.toggle-wrap{display:flex;align-items:center;gap:10px}
+.toggle{width:48px;height:26px;border-radius:13px;background:var(--border);position:relative;cursor:pointer;transition:background .2s}
+.toggle.on{background:var(--primary)}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s}
+.toggle.on::after{left:25px}
+.pain-details{margin-top:8px;padding:10px;background:rgba(13,148,136,.05);border-radius:8px;display:none}
+.pain-details.show{display:block}
+.bristol-sel{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:6px 0}
+.bristol-btn{padding:4px;border-radius:8px;border:1.5px solid var(--border);background:var(--card);cursor:pointer;text-align:center;font-size:11px;transition:all .15s}
+.bristol-btn.active{border-color:var(--primary);background:rgba(13,148,136,.12)}
+.bristol-btn .num{font-weight:700;font-size:14px}
+.urgency-sel{display:flex;gap:4px}
+.urgency-sel button{flex:1;padding:6px;border-radius:6px;border:1.5px solid var(--border);background:var(--card);cursor:pointer;font-size:13px}
+.urgency-sel button.active{border-color:var(--primary);background:rgba(13,148,136,.12);color:var(--primary);font-weight:600}
+.helped-checks{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.helped-checks label{display:flex;align-items:center;gap:4px;font-size:12px}
+
+/* === AUTH SCREEN === */
+#auth-screen{display:none;min-height:100vh;align-items:center;justify-content:center;padding:24px;background:var(--bg)}
+#auth-screen.active{display:flex}
+.auth-card{background:var(--card);border-radius:16px;padding:32px 24px;width:100%;max-width:380px;box-shadow:0 4px 24px rgba(0,0,0,.12)}
+.auth-card h1{text-align:center;color:var(--primary);font-size:24px;margin-bottom:4px}
+.auth-card .subtitle{text-align:center;color:var(--text2);font-size:14px;margin-bottom:24px}
+.auth-card .form-group{margin-bottom:14px}
+.auth-card .form-group label{font-weight:600;margin-bottom:6px;display:block}
+.auth-card .btn-primary{width:100%;padding:12px;font-size:16px;margin-top:8px}
+.auth-card .auth-link{text-align:center;margin-top:16px;font-size:13px;color:var(--text2)}
+.auth-card .auth-link a{color:var(--primary);cursor:pointer;text-decoration:underline;font-weight:600}
+.auth-error{background:rgba(239,68,68,.1);color:var(--danger);padding:10px;border-radius:8px;font-size:13px;margin-bottom:12px;display:none}
+.auth-error.show{display:block}
+.role-selector{display:flex;gap:8px;margin-bottom:14px}
+.role-btn{flex:1;padding:12px 8px;border-radius:10px;border:2px solid var(--border);background:var(--card);cursor:pointer;text-align:center;font-size:13px;transition:all .15s}
+.role-btn.active{border-color:var(--primary);background:rgba(13,148,136,.1);color:var(--primary);font-weight:700}
+.role-btn .role-icon{font-size:24px;display:block;margin-bottom:4px}
+
+/* === ROLE BANNER === */
+.role-banner{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;padding:10px 16px;text-align:center;font-size:14px;font-weight:600;display:none}
+.role-banner.show{display:block}
+
+/* === SYNC STATUS === */
+.sync-status{position:fixed;top:8px;right:8px;z-index:200;font-size:12px;padding:4px 10px;border-radius:20px;background:var(--card);box-shadow:var(--shadow);color:var(--text2);display:none;align-items:center;gap:4px}
+.sync-status.show{display:flex}
+
+/* === USER HEADER === */
+.user-header{display:none;padding:8px 16px;background:var(--card);border-bottom:1px solid var(--border);align-items:center;justify-content:space-between;font-size:13px}
+.user-header.show{display:flex}
+.user-header .user-info{display:flex;align-items:center;gap:8px}
+.user-header .role-badge{background:var(--primary);color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;text-transform:uppercase}
+
+/* === SHARE CODE === */
+.share-code-display{font-family:'Courier New',monospace;font-size:28px;font-weight:700;letter-spacing:4px;color:var(--primary);text-align:center;padding:12px;background:rgba(13,148,136,.08);border-radius:10px;cursor:pointer;user-select:all}
+.monitor-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
+.monitor-item:last-child{border:none}
+
+/* === READ-ONLY OVERLAY === */
+.read-only-badge{background:rgba(245,158,11,.15);color:var(--warn);padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;display:inline-block;margin-bottom:8px}
+
+@media print{nav,.save-btn,.export-row,.sync-status,.user-header,.role-banner{display:none!important}body{padding:0}.tab-content{display:block!important;max-width:100%}.card{break-inside:avoid;box-shadow:none;border:1px solid #ddd}#auth-screen{display:none!important}}
+</style>
+</head>
+<body>
+<div id="toast" class="toast"></div>
+<div class="sync-status" id="sync-status">✓ Synced</div>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+<div class="auth-card">
+<h1>🩺 GI Tracker</h1>
+<p class="subtitle" id="auth-subtitle">Sign in to continue</p>
+<div class="auth-error" id="auth-error"></div>
+
+<!-- LOGIN FORM -->
+<div id="login-form">
+<div class="form-group"><label>Email</label><input type="email" id="login-email" placeholder="you@example.com"></div>
+<div class="form-group"><label>Password</label><input type="password" id="login-password" placeholder="Password"></div>
+<button class="btn-primary" onclick="doLogin()">Sign In</button>
+<div class="auth-link">Don't have an account? <a onclick="showRegister()">Create Account</a></div>
+</div>
+
+<!-- REGISTER FORM -->
+<div id="register-form" style="display:none">
+<div class="form-group"><label>Name</label><input type="text" id="reg-name" placeholder="Your name"></div>
+<div class="form-group"><label>Email</label><input type="email" id="reg-email" placeholder="you@example.com"></div>
+<div class="form-group"><label>Password</label><input type="password" id="reg-password" placeholder="Min 6 characters"></div>
+<div class="form-group"><label>I am a...</label>
+<div class="role-selector">
+<div class="role-btn active" data-role="patient" onclick="pickRole(this)"><span class="role-icon">🧑</span>Patient</div>
+<div class="role-btn" data-role="parent" onclick="pickRole(this)"><span class="role-icon">👨‍👩‍👦</span>Parent</div>
+<div class="role-btn" data-role="doctor" onclick="pickRole(this)"><span class="role-icon">👨‍⚕️</span>Doctor</div>
+</div></div>
+<div class="form-group" id="share-code-field" style="display:none"><label>Patient's Share Code</label><input type="text" id="reg-share-code" placeholder="e.g. ABC123" maxlength="6" style="text-transform:uppercase;letter-spacing:2px;font-weight:700;text-align:center"></div>
+<button class="btn-primary" onclick="doRegister()">Create Account</button>
+<div class="auth-link">Already have an account? <a onclick="showLogin()">Sign In</a></div>
+</div>
+</div>
+</div>
+
+<!-- MAIN APP (hidden until auth) -->
+<div id="app-container" style="display:none">
+
+<!-- ROLE BANNER -->
+<div class="role-banner" id="role-banner"></div>
+
+<!-- USER HEADER -->
+<div class="user-header" id="user-header">
+<div class="user-info"><span id="header-user-name"></span><span class="role-badge" id="header-role-badge"></span></div>
+</div>
+
+<!-- TAB 1: DAILY LOG -->
+<div id="tab-log" class="tab-content active">
+<h2 class="page-title">📝 Daily Log</h2>
+<div class="card">
+<label>Date</label>
+<input type="date" id="log-date" onchange="loadDay()">
+</div>
+
+<div class="card">
+<h3>🚽 Bowel Movements</h3>
+<div id="bm-list"></div>
+<button class="btn-primary btn-sm add-bm-btn" onclick="addBM()">+ Add BM</button>
+</div>
+
+<div class="card">
+<h3>🩺 Symptoms</h3>
+<div class="pills" id="symptom-pills"></div>
+<div id="pain-details-box" class="pain-details">
+<label>Pain Location</label>
+<select id="pain-location"><option value="">Select...</option><option>Upper abdomen</option><option>Lower abdomen</option><option>Left side</option><option>Right side</option><option>Around belly button</option><option>All over</option></select>
+<label style="margin-top:8px">Worst Pain Level (0-10)</label>
+<div class="range-row"><input type="range" id="pain-worst" min="0" max="10" value="0" oninput="this.nextElementSibling.textContent=this.value"><span class="range-val">0</span></div>
+<label style="margin-top:8px">Hours of Pain</label>
+<input type="number" id="pain-hours" min="0" max="24" step="0.5" placeholder="Hours">
+<label style="margin-top:8px">What Helped?</label>
+<div class="helped-checks" id="pain-helped">
+<label><input type="checkbox" value="Rest"> Rest</label>
+<label><input type="checkbox" value="Heat pad"> Heat pad</label>
+<label><input type="checkbox" value="Medication"> Medication</label>
+<label><input type="checkbox" value="Bathroom"> Bathroom</label>
+<label><input type="checkbox" value="Eating"> Eating</label>
+<label><input type="checkbox" value="Nothing"> Nothing</label>
+</div>
+</div>
+</div>
+
+<div class="card">
+<h3>🍽️ Food Log</h3>
+<div id="food-log">
+<div class="row"><label style="flex:0 0 70px">Breakfast</label><input type="time" style="flex:0 0 90px" id="food-breakfast-time"><input type="text" id="food-breakfast" placeholder="What did you eat?"></div>
+<div class="row"><label style="flex:0 0 70px">Lunch</label><input type="time" style="flex:0 0 90px" id="food-lunch-time"><input type="text" id="food-lunch" placeholder="What did you eat?"></div>
+<div class="row"><label style="flex:0 0 70px">Dinner</label><input type="time" style="flex:0 0 90px" id="food-dinner-time"><input type="text" id="food-dinner" placeholder="What did you eat?"></div>
+<div class="row"><label style="flex:0 0 70px">Snacks</label><input type="time" style="flex:0 0 90px" id="food-snacks-time"><input type="text" id="food-snacks" placeholder="What did you eat?"></div>
+</div>
+</div>
+
+<div class="card">
+<h3>💧 Water</h3>
+<div class="water-row" id="water-row"></div>
+<div style="font-size:13px;color:var(--text2)" id="water-count">0 / 8 glasses</div>
+</div>
+
+<div class="card">
+<h3>💊 Medications</h3>
+<div id="med-list"></div>
+<button class="btn-outline btn-sm add-med-btn" onclick="addMed()">+ Add Medication</button>
+</div>
+
+<div class="card">
+<h3>😴 Sleep</h3>
+<div class="row">
+<div><label>Hours</label><input type="number" id="sleep-hours" min="0" max="24" step="0.5" placeholder="Hours"></div>
+<div><label>Quality</label>
+<div class="sleep-row" id="sleep-quality">
+<button class="btn-outline btn-sm" data-val="Bad" onclick="pickSleep(this)">😫 Bad</button>
+<button class="btn-outline btn-sm" data-val="Fair" onclick="pickSleep(this)">😐 Fair</button>
+<button class="btn-outline btn-sm" data-val="Good" onclick="pickSleep(this)">🙂 Good</button>
+<button class="btn-outline btn-sm" data-val="Great" onclick="pickSleep(this)">😄 Great</button>
+</div></div>
+</div>
+</div>
+
+<div class="card">
+<h3>🏃 Exercise</h3>
+<div class="exercise-row" id="exercise-intensity">
+<button class="btn-outline btn-sm" data-val="None" onclick="pickExercise(this)">None</button>
+<button class="btn-outline btn-sm" data-val="Light" onclick="pickExercise(this)">Light</button>
+<button class="btn-outline btn-sm" data-val="Moderate" onclick="pickExercise(this)">Moderate</button>
+<button class="btn-outline btn-sm" data-val="Intense" onclick="pickExercise(this)">Intense</button>
+</div>
+<div class="row" style="margin-top:8px">
+<div><label>Type</label><input type="text" id="exercise-type" placeholder="e.g., Walking, Basketball"></div>
+<div style="flex:0 0 80px"><label>Minutes</label><input type="number" id="exercise-min" min="0" placeholder="Min"></div>
+</div>
+</div>
+
+<div class="card">
+<h3>😰 Stress & Mood</h3>
+<label>Stress Level</label>
+<div class="range-row"><input type="range" id="stress-level" min="0" max="10" value="0" oninput="updateStressEmoji()"><span class="range-val" id="stress-val">0 😌</span></div>
+<label style="margin-top:10px">Mood</label>
+<div class="mood-row" id="mood-row">
+<button class="mood-btn" data-val="1" onclick="pickMood(this)">😫</button>
+<button class="mood-btn" data-val="2" onclick="pickMood(this)">😟</button>
+<button class="mood-btn" data-val="3" onclick="pickMood(this)">😐</button>
+<button class="mood-btn" data-val="4" onclick="pickMood(this)">🙂</button>
+<button class="mood-btn" data-val="5" onclick="pickMood(this)">😄</button>
+</div>
+<label style="margin-top:10px">Stress Trigger</label>
+<input type="text" id="stress-trigger" placeholder="What caused stress?">
+<label style="margin-top:10px">Did stress trigger symptoms?</label>
+<div class="stress-symp-row" id="stress-symptoms">
+<button class="btn-outline btn-sm" data-val="Yes" onclick="pickStressSymp(this)">Yes</button>
+<button class="btn-outline btn-sm" data-val="No" onclick="pickStressSymp(this)">No</button>
+<button class="btn-outline btn-sm" data-val="Unsure" onclick="pickStressSymp(this)">Unsure</button>
+</div>
+</div>
+
+<div class="card">
+<h3>📝 Daily Notes</h3>
+<textarea id="daily-notes" rows="3" placeholder="Anything else to note today..."></textarea>
+</div>
+
+<button class="btn-primary save-btn" onclick="saveDay()">💾 Save Entry</button>
+</div>
+
+<!-- TAB 2: HISTORY -->
+<div id="tab-history" class="tab-content">
+<h2 class="page-title">📅 History</h2>
+<div class="card">
+<div class="cal-nav">
+<button class="btn-outline btn-sm" onclick="calNav(-1)">◀ Prev</button>
+<h3 id="cal-title"></h3>
+<button class="btn-outline btn-sm" onclick="calNav(1)">Next ▶</button>
+</div>
+<div class="cal-grid" id="cal-grid"></div>
+</div>
+</div>
+
+<!-- TAB 3: CHARTS -->
+<div id="tab-charts" class="tab-content">
+<h2 class="page-title">📊 Charts</h2>
+<div class="range-selector" id="chart-range">
+<button class="btn-outline btn-sm active" data-days="7" onclick="setChartRange(this)">7 Days</button>
+<button class="btn-outline btn-sm" data-days="14" onclick="setChartRange(this)">14 Days</button>
+<button class="btn-outline btn-sm" data-days="30" onclick="setChartRange(this)">30 Days</button>
+</div>
+<div class="card"><h3>📈 Pain Trend</h3><div class="chart-container"><canvas id="chart-pain"></canvas></div></div>
+<div class="card"><h3>💩 Bristol Type Distribution</h3><div class="chart-container"><canvas id="chart-bristol"></canvas></div></div>
+<div class="card"><h3>😰 Stress vs Pain</h3><div class="chart-container"><canvas id="chart-scatter"></canvas></div></div>
+<div class="card"><h3>🩺 Symptom Frequency</h3><div class="chart-container"><canvas id="chart-symptoms"></canvas></div></div>
+</div>
+
+<!-- TAB 4: SUMMARY -->
+<div id="tab-summary" class="tab-content">
+<h2 class="page-title">📋 Summary</h2>
+<div class="card">
+<label>Week Starting</label>
+<input type="date" id="summary-week" onchange="updateSummary()">
+</div>
+<div class="card" id="summary-stats"></div>
+<div class="export-row">
+<button class="btn-outline" onclick="printSummary()">🖨️ Print/PDF</button>
+<button class="btn-outline" onclick="copySummary()">📋 Copy</button>
+<button class="btn-outline" onclick="exportJSON()">💾 Export JSON</button>
+<button class="btn-outline doctor-only" onclick="exportClinicalReport()" style="display:none">🏥 Clinical Report</button>
+</div>
+</div>
+
+<!-- TAB 5: SETTINGS -->
+<div id="tab-settings" class="tab-content">
+<h2 class="page-title">⚙️ Settings</h2>
+<div class="card patient-only">
+<h3>👤 Patient Info</h3>
+<div class="settings-row"><label>Name</label><input type="text" id="set-name"></div>
+<div class="settings-row"><label>Date of Birth</label><input type="date" id="set-dob"></div>
+<div class="settings-row"><label>Doctor</label><input type="text" id="set-doctor"></div>
+<div class="settings-row"><label>Next Appointment</label><input type="date" id="set-appt"></div>
+</div>
+<div class="card patient-only">
+<h3>💊 Saved Medications</h3>
+<div id="saved-meds-list"></div>
+<div class="row"><input type="text" id="new-saved-med" placeholder="Medication name"><button class="btn-primary btn-sm" onclick="addSavedMed()">Add</button></div>
+</div>
+
+<!-- SHARING CARD (Patient only) -->
+<div class="card patient-only" id="sharing-card">
+<h3>🔗 Sharing & Access</h3>
+<label>Your Share Code (tap to copy)</label>
+<div class="share-code-display" id="my-share-code" onclick="copyShareCode()">------</div>
+<button class="btn-outline btn-sm" style="width:100%;margin-top:8px" onclick="regenerateShareCode()">🔄 Regenerate Code</button>
+<div style="margin-top:14px"><label style="font-weight:600">Connected Monitors</label></div>
+<div id="monitors-list"><div style="color:var(--text2);font-size:13px;padding:8px 0">No one connected yet</div></div>
+</div>
+
+<div class="card">
+<h3>🎨 Appearance</h3>
+<div class="toggle-wrap"><span>Dark Mode</span><div class="toggle" id="dark-toggle" onclick="toggleDark()"></div></div>
+</div>
+<div class="card patient-only">
+<h3>📦 Data Management</h3>
+<div class="settings-row"><label>Import JSON Backup</label><input type="file" id="import-file" accept=".json" onchange="importJSON(event)"></div>
+<button class="btn-danger" style="width:100%;margin-top:8px" onclick="clearAllData()">🗑️ Clear All Data</button>
+</div>
+
+<!-- ACCOUNT CARD -->
+<div class="card">
+<h3>🔐 Account</h3>
+<div style="font-size:13px;color:var(--text2);margin-bottom:8px" id="account-email"></div>
+<button class="btn-danger" style="width:100%" onclick="doLogout()">🚪 Sign Out</button>
+</div>
+
+<div style="text-align:center;margin-top:16px;color:var(--text2);font-size:12px">GI Tracker v2.0 • Built with ❤️ for Dylan</div>
+</div>
+
+<nav id="main-nav">
+<button class="active" onclick="switchTab('log',this)"><span class="icon">📝</span>Log</button>
+<button onclick="switchTab('history',this)"><span class="icon">📅</span>History</button>
+<button onclick="switchTab('charts',this)"><span class="icon">📊</span>Charts</button>
+<button onclick="switchTab('summary',this)"><span class="icon">📋</span>Summary</button>
+<button onclick="switchTab('settings',this)"><span class="icon">⚙️</span>Settings</button>
+</nav>
+</div><!-- /app-container -->
+
+<script>
+// ===== FIREBASE INIT =====
+const firebaseConfig = {
+  apiKey: "AIzaSyC4rXoJ76JQF4nCdUfcb3Fnq9Bxe-NZRSs",
+  authDomain: "gi-tracker-29a0b.firebaseapp.com",
+  projectId: "gi-tracker-29a0b",
+  storageBucket: "gi-tracker-29a0b.firebasestorage.app",
+  messagingSenderId: "814301437560",
+  appId: "1:814301437560:web:ad9b3ea9c248b9bde2178d"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+db.enablePersistence({ synchronizeTabs: true }).catch(function(err) { console.log('Persistence error:', err.code); });
+
+// ===== APP STATE =====
+const SYMPTOMS = ['Abdominal pain','Bloating','Nausea','Gas','Cramping','Fatigue','Headache','Loss of appetite','Heartburn','Woke at night'];
+const BRISTOL = [{n:1,e:'🟤',d:'Hard lumps'},{n:2,e:'🟤',d:'Lumpy sausage'},{n:3,e:'🟫',d:'Cracked sausage'},{n:4,e:'🟫',d:'Smooth snake'},{n:5,e:'🟡',d:'Soft blobs'},{n:6,e:'🟡',d:'Mushy'},{n:7,e:'💧',d:'Watery'}];
+const STRESS_EMOJIS = ['😌','😌','🙂','🙂','😐','😐','😟','😟','😰','😰','🤯'];
+let currentData = {};
+let calMonth, calYear;
+let charts = {};
+let chartDays = 7;
+let currentUser = null; // firebase user
+let userProfile = null; // { name, role, email, linkedPatientId }
+let patientId = null; // the patient ID we're viewing
+let isReadOnly = false;
+let bmCounter = 0;
+let firestoreLogCache = {}; // date -> data, from Firestore
+
+// ===== SYNC STATUS =====
+function setSyncStatus(state) {
+  const el = document.getElementById('sync-status');
+  el.classList.add('show');
+  if (state === 'synced') { el.textContent = '✓ Synced'; el.style.color = 'var(--good)'; }
+  else if (state === 'syncing') { el.textContent = '↻ Syncing'; el.style.color = 'var(--warn)'; }
+  else if (state === 'offline') { el.textContent = '⚡ Offline'; el.style.color = 'var(--text2)'; }
+  else if (state === 'error') { el.textContent = '✕ Error'; el.style.color = 'var(--danger)'; }
+  if (state === 'synced') setTimeout(function() { el.classList.remove('show'); }, 3000);
+}
+
+// ===== AUTH UI =====
+function showLogin() {
+  document.getElementById('login-form').style.display = 'block';
+  document.getElementById('register-form').style.display = 'none';
+  document.getElementById('auth-subtitle').textContent = 'Sign in to continue';
+  document.getElementById('auth-error').classList.remove('show');
+}
+function showRegister() {
+  document.getElementById('login-form').style.display = 'none';
+  document.getElementById('register-form').style.display = 'block';
+  document.getElementById('auth-subtitle').textContent = 'Create your account';
+  document.getElementById('auth-error').classList.remove('show');
+}
+function showAuthError(msg) {
+  var el = document.getElementById('auth-error');
+  el.textContent = msg; el.classList.add('show');
+}
+function pickRole(el) {
+  document.querySelectorAll('.role-btn').forEach(function(b) { b.classList.remove('active'); });
+  el.classList.add('active');
+  var role = el.dataset.role;
+  document.getElementById('share-code-field').style.display = (role === 'patient') ? 'none' : 'block';
+}
+function getSelectedRole() {
+  var el = document.querySelector('.role-btn.active');
+  return el ? el.dataset.role : 'patient';
+}
+
+function generateShareCode() {
+  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I/O/0/1 for clarity
+  var code = '';
+  for (var i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+  return code;
+}
+
+// ===== AUTH ACTIONS =====
+async function doLogin() {
+  var email = document.getElementById('login-email').value.trim();
+  var password = document.getElementById('login-password').value;
+  if (!email || !password) return showAuthError('Please fill in all fields');
+  try {
+    await auth.signInWithEmailAndPassword(email, password);
+  } catch (e) {
+    var msg = 'Login failed';
+    if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') msg = 'Invalid email or password';
+    else if (e.code === 'auth/invalid-email') msg = 'Invalid email address';
+    else if (e.code === 'auth/too-many-requests') msg = 'Too many attempts. Try again later.';
+    showAuthError(msg);
+  }
+}
+
+async function doRegister() {
+  var name = document.getElementById('reg-name').value.trim();
+  var email = document.getElementById('reg-email').value.trim();
+  var password = document.getElementById('reg-password').value;
+  var role = getSelectedRole();
+  var shareCode = document.getElementById('reg-share-code').value.trim().toUpperCase();
+
+  if (!name || !email || !password) return showAuthError('Please fill in all fields');
+  if (password.length < 6) return showAuthError('Password must be at least 6 characters');
+  if (role !== 'patient' && !shareCode) return showAuthError('Please enter the patient\'s share code');
+
+  try {
+    // If parent/doctor, verify share code first
+    var linkedPatientId = null;
+    if (role !== 'patient') {
+      var snap = await db.collectionGroup('shareCode').get().catch(function() { return null; });
+      // Search for share code in patients collection
+      var patientsSnap = await db.collection('patients').get();
+      var found = false;
+      patientsSnap.forEach(function(doc) {
+        var data = doc.data();
+        if (data.shareCode === shareCode) {
+          linkedPatientId = doc.id;
+          found = true;
+        }
+      });
+      if (!found) return showAuthError('Invalid share code. Ask the patient for their code.');
+    }
+
+    var cred = await auth.createUserWithEmailAndPassword(email, password);
+    var uid = cred.user.uid;
+
+    if (role === 'patient') {
+      // Patient: create patient doc with share code, create user profile
+      var code = generateShareCode();
+      await db.collection('patients').doc(uid).set({
+        shareCode: code,
+        monitors: [],
+        settings: { name: name, dob: '', doctor: '', appt: '', savedMeds: [], darkMode: false }
+      });
+      await db.collection('users').doc(uid).set({
+        name: name, role: role, email: email, linkedPatientId: uid
+      });
+    } else {
+      // Parent/Doctor: link to patient
+      await db.collection('users').doc(uid).set({
+        name: name, role: role, email: email, linkedPatientId: linkedPatientId
+      });
+      // Add to patient's monitors
+      var patDoc = await db.collection('patients').doc(linkedPatientId).get();
+      var monitors = patDoc.exists ? (patDoc.data().monitors || []) : [];
+      monitors.push({ uid: uid, role: role, name: name });
+      await db.collection('patients').doc(linkedPatientId).update({ monitors: monitors });
+    }
+    // Auth state change will handle the rest
+  } catch (e) {
+    var msg = 'Registration failed';
+    if (e.code === 'auth/email-already-in-use') msg = 'An account with this email already exists';
+    else if (e.code === 'auth/invalid-email') msg = 'Invalid email address';
+    else if (e.code === 'auth/weak-password') msg = 'Password is too weak';
+    else msg = e.message || msg;
+    showAuthError(msg);
+  }
+}
+
+function doLogout() {
+  if (!confirm('Sign out?')) return;
+  auth.signOut();
+}
+
+// ===== AUTH STATE LISTENER =====
+auth.onAuthStateChanged(async function(user) {
+  if (user) {
+    currentUser = user;
+    try {
+      var userDoc = await db.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        // Edge case: user exists in auth but not firestore (shouldn't happen normally)
+        auth.signOut();
+        return;
+      }
+      userProfile = userDoc.data();
+      patientId = userProfile.linkedPatientId;
+      isReadOnly = (userProfile.role !== 'patient');
+
+      // Show app
+      document.getElementById('auth-screen').classList.remove('active');
+      document.getElementById('app-container').style.display = 'block';
+      setupRoleUI();
+      initApp();
+      syncFromFirestore();
+    } catch (e) {
+      console.error('Profile load error:', e);
+      // Offline fallback: try localStorage
+      var cachedProfile = localStorage.getItem('gi-tracker-profile');
+      if (cachedProfile) {
+        userProfile = JSON.parse(cachedProfile);
+        patientId = userProfile.linkedPatientId;
+        isReadOnly = (userProfile.role !== 'patient');
+        document.getElementById('auth-screen').classList.remove('active');
+        document.getElementById('app-container').style.display = 'block';
+        setupRoleUI();
+        initApp();
+        setSyncStatus('offline');
+      }
+    }
+    // Cache profile locally
+    if (userProfile) localStorage.setItem('gi-tracker-profile', JSON.stringify(userProfile));
+  } else {
+    currentUser = null;
+    userProfile = null;
+    patientId = null;
+    document.getElementById('app-container').style.display = 'none';
+    document.getElementById('auth-screen').classList.add('active');
+    showLogin();
+  }
+});
+
+// ===== ROLE-BASED UI SETUP =====
+function setupRoleUI() {
+  var role = userProfile.role;
+  var banner = document.getElementById('role-banner');
+  var header = document.getElementById('user-header');
+
+  // Header
+  header.classList.add('show');
+  document.getElementById('header-user-name').textContent = userProfile.name;
+  document.getElementById('header-role-badge').textContent = role.charAt(0).toUpperCase() + role.slice(1);
+  document.getElementById('account-email').textContent = userProfile.email;
+
+  // Role banner for parent/doctor
+  if (role === 'parent') {
+    banner.textContent = '👀 Monitoring patient\'s journal';
+    banner.classList.add('show');
+    loadPatientNameForBanner();
+  } else if (role === 'doctor') {
+    banner.textContent = '🏥 Clinical view';
+    banner.classList.add('show');
+    loadPatientNameForBanner();
+  } else {
+    banner.classList.remove('show');
+  }
+
+  // Hide patient-only elements for non-patients
+  document.querySelectorAll('.patient-only').forEach(function(el) {
+    el.style.display = (role === 'patient') ? '' : 'none';
+  });
+
+  // Show doctor-only elements
+  document.querySelectorAll('.doctor-only').forEach(function(el) {
+    el.style.display = (role === 'doctor') ? '' : 'none';
+  });
+
+  // Read-only: hide save button and add buttons
+  if (isReadOnly) {
+    document.querySelector('.save-btn').style.display = 'none';
+    document.querySelectorAll('.add-bm-btn, .add-med-btn').forEach(function(b) { b.style.display = 'none'; });
+  } else {
+    document.querySelector('.save-btn').style.display = '';
+    document.querySelectorAll('.add-bm-btn, .add-med-btn').forEach(function(b) { b.style.display = ''; });
+  }
+
+  // Load sharing info for patients
+  if (role === 'patient') loadSharingInfo();
+}
+
+async function loadPatientNameForBanner() {
+  try {
+    var patDoc = await db.collection('patients').doc(patientId).get();
+    if (patDoc.exists) {
+      var settings = patDoc.data().settings || {};
+      var name = settings.name || 'Patient';
+      var banner = document.getElementById('role-banner');
+      if (userProfile.role === 'parent') banner.textContent = '👀 Monitoring ' + name + '\'s journal';
+      else if (userProfile.role === 'doctor') banner.textContent = '🏥 Clinical view — ' + name;
+    }
+  } catch (e) { /* offline, keep generic banner */ }
+}
+
+// ===== SHARING (Patient only) =====
+async function loadSharingInfo() {
+  try {
+    var patDoc = await db.collection('patients').doc(patientId).get();
+    if (!patDoc.exists) return;
+    var data = patDoc.data();
+    document.getElementById('my-share-code').textContent = data.shareCode || '------';
+    var monitors = data.monitors || [];
+    var list = document.getElementById('monitors-list');
+    if (monitors.length === 0) {
+      list.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:8px 0">No one connected yet</div>';
+    } else {
+      list.innerHTML = '';
+      monitors.forEach(function(m, idx) {
+        var div = document.createElement('div');
+        div.className = 'monitor-item';
+        div.innerHTML = '<div><strong>' + escHtml(m.name) + '</strong> <span style="color:var(--text2);font-size:12px">(' + m.role + ')</span></div>' +
+          '<button class="btn-sm btn-danger" onclick="removeMonitor(' + idx + ')">Remove</button>';
+        list.appendChild(div);
+      });
+    }
+  } catch (e) { console.error('Load sharing error:', e); }
+}
+
+function copyShareCode() {
+  var code = document.getElementById('my-share-code').textContent;
+  if (code === '------') return;
+  navigator.clipboard.writeText(code).then(function() { toast('📋 Share code copied!'); }).catch(function() { toast('Code: ' + code); });
+}
+
+async function regenerateShareCode() {
+  if (!confirm('Regenerate share code? Anyone with the old code won\'t be able to link.')) return;
+  var code = generateShareCode();
+  try {
+    await db.collection('patients').doc(patientId).update({ shareCode: code });
+    document.getElementById('my-share-code').textContent = code;
+    toast('🔄 New code: ' + code);
+  } catch (e) { toast('❌ Failed to regenerate'); }
+}
+
+async function removeMonitor(idx) {
+  if (!confirm('Remove this monitor\'s access?')) return;
+  try {
+    var patDoc = await db.collection('patients').doc(patientId).get();
+    var monitors = patDoc.data().monitors || [];
+    monitors.splice(idx, 1);
+    await db.collection('patients').doc(patientId).update({ monitors: monitors });
+    loadSharingInfo();
+    toast('✅ Monitor removed');
+  } catch (e) { toast('❌ Failed to remove'); }
+}
+
+// ===== FIRESTORE SYNC =====
+async function syncFromFirestore() {
+  if (!patientId) return;
+  setSyncStatus('syncing');
+  try {
+    // Sync settings
+    var patDoc = await db.collection('patients').doc(patientId).get();
+    if (patDoc.exists) {
+      var patData = patDoc.data();
+      if (patData.settings) {
+        localStorage.setItem('gi-tracker-settings', JSON.stringify(patData.settings));
+        loadSettings();
+      }
+    }
+    // Sync all logs
+    var logsSnap = await db.collection('patients').doc(patientId).collection('logs').get();
+    logsSnap.forEach(function(doc) {
+      var date = doc.id;
+      var data = doc.data();
+      firestoreLogCache[date] = data;
+      localStorage.setItem('gi-tracker-' + date, JSON.stringify(data));
+    });
+    // Reload current day
+    loadDay();
+    setSyncStatus('synced');
+  } catch (e) {
+    console.error('Sync error:', e);
+    setSyncStatus('offline');
+  }
+}
+
+async function saveToFirestore(date, data) {
+  if (!patientId || isReadOnly) return;
+  setSyncStatus('syncing');
+  try {
+    await db.collection('patients').doc(patientId).collection('logs').doc(date).set(data);
+    firestoreLogCache[date] = data;
+    setSyncStatus('synced');
+  } catch (e) {
+    console.error('Save to Firestore error:', e);
+    setSyncStatus('offline');
+    // Data is still in localStorage, will sync later
+  }
+}
+
+async function saveSettingsToFirestore(settings) {
+  if (!patientId || isReadOnly) return;
+  try {
+    await db.collection('patients').doc(patientId).update({ settings: settings });
+  } catch (e) { console.error('Settings sync error:', e); }
+}
+
+// ===== INIT =====
+function initApp() {
+  var today = new Date().toISOString().split('T')[0];
+  document.getElementById('log-date').value = today;
+  var d = new Date(); d.setDate(d.getDate() - d.getDay() + 1);
+  document.getElementById('summary-week').value = d.toISOString().split('T')[0];
+  calMonth = new Date().getMonth(); calYear = new Date().getFullYear();
+  initSymptomPills();
+  initWater();
+  loadSettings();
+  loadDay();
+  renderCalendar();
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('service-worker.js');
+}
+
+// ===== TAB SWITCHING =====
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelectorAll('nav button').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'history') renderCalendar();
+  if (id === 'charts') renderCharts();
+  if (id === 'summary') updateSummary();
+}
+
+// ===== TOAST =====
+function toast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2000);
+}
+
+function escHtml(s) {
+  var div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+// ===== SYMPTOM PILLS =====
+function initSymptomPills() {
+  var c = document.getElementById('symptom-pills');
+  c.innerHTML = '';
+  SYMPTOMS.forEach(function(s) {
+    var p = document.createElement('div');
+    p.className = 'pill'; p.textContent = s; p.dataset.symptom = s;
+    p.onclick = function() {
+      if (isReadOnly) return;
+      p.classList.toggle('active'); togglePainDetails();
+    };
+    c.appendChild(p);
+  });
+}
+function togglePainDetails() {
+  var pill = document.querySelector('.pill[data-symptom="Abdominal pain"]');
+  var active = pill && pill.classList.contains('active');
+  document.getElementById('pain-details-box').classList.toggle('show', active);
+}
+
+// ===== WATER =====
+function initWater() {
+  var c = document.getElementById('water-row');
+  c.innerHTML = '';
+  for (var i = 1; i <= 8; i++) {
+    var b = document.createElement('div');
+    b.className = 'water-btn'; b.textContent = i; b.dataset.idx = i;
+    (function(n) { b.onclick = function() { if (!isReadOnly) toggleWater(n); }; })(i);
+    c.appendChild(b);
+  }
+}
+function toggleWater(n) {
+  var btns = document.querySelectorAll('.water-btn');
+  var wasActive = btns[n - 1].classList.contains('filled');
+  btns.forEach(function(b, i) {
+    if (wasActive && i >= n - 1) b.classList.remove('filled');
+    else if (!wasActive && i < n) b.classList.add('filled');
+  });
+  updateWaterCount();
+}
+function updateWaterCount() {
+  var n = document.querySelectorAll('.water-btn.filled').length;
+  document.getElementById('water-count').textContent = n + ' / 8 glasses';
+}
+function setWater(n) {
+  document.querySelectorAll('.water-btn').forEach(function(b, i) { b.classList.toggle('filled', i < n); });
+  updateWaterCount();
+}
+
+// ===== BOWEL MOVEMENTS =====
+function addBM(data) {
+  if (isReadOnly && !data) return;
+  var id = bmCounter++;
+  var div = document.createElement('div');
+  div.className = 'bm-entry'; div.id = 'bm-' + id;
+  var now = new Date();
+  var timeStr = data ? (data.time || '') : (now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0'));
+  var readonlyAttr = isReadOnly ? ' disabled' : '';
+  div.innerHTML =
+    (isReadOnly ? '' : '<button class="bm-delete" onclick="this.parentElement.remove()">✕</button>') +
+    '<div class="row"><div><label>Time</label><input type="time" class="bm-time" value="' + timeStr + '"' + readonlyAttr + '></div></div>' +
+    '<label>Bristol Type</label>' +
+    '<div class="bristol-sel">' + BRISTOL.map(function(b) {
+      return '<div class="bristol-btn ' + (data && data.bristol === b.n ? 'active' : '') + '" data-val="' + b.n + '" onclick="pickBristol(this)"><div class="num">' + b.n + '</div><div>' + b.e + '</div></div>';
+    }).join('') + '</div>' +
+    '<label>Pain Before (0-10)</label>' +
+    '<div class="range-row"><input type="range" class="bm-pain-before" min="0" max="10" value="' + (data ? data.painBefore || 0 : 0) + '" oninput="this.nextElementSibling.textContent=this.value"' + readonlyAttr + '><span class="range-val">' + (data ? data.painBefore || 0 : 0) + '</span></div>' +
+    '<label>Pain During (0-10)</label>' +
+    '<div class="range-row"><input type="range" class="bm-pain-during" min="0" max="10" value="' + (data ? data.painDuring || 0 : 0) + '" oninput="this.nextElementSibling.textContent=this.value"' + readonlyAttr + '><span class="range-val">' + (data ? data.painDuring || 0 : 0) + '</span></div>' +
+    '<label>Pain After (0-10)</label>' +
+    '<div class="range-row"><input type="range" class="bm-pain-after" min="0" max="10" value="' + (data ? data.painAfter || 0 : 0) + '" oninput="this.nextElementSibling.textContent=this.value"' + readonlyAttr + '><span class="range-val">' + (data ? data.painAfter || 0 : 0) + '</span></div>' +
+    '<div class="row">' +
+    '<div class="toggle-wrap"><span style="font-size:13px">🩸 Blood</span><div class="toggle ' + (data && data.blood ? 'on' : '') + '" onclick="' + (isReadOnly ? '' : 'this.classList.toggle(\'on\')') + '"></div></div>' +
+    '<div class="toggle-wrap"><span style="font-size:13px">Mucus</span><div class="toggle ' + (data && data.mucus ? 'on' : '') + '" onclick="' + (isReadOnly ? '' : 'this.classList.toggle(\'on\')') + '"></div></div>' +
+    '</div>' +
+    '<label>Urgency (1-5)</label>' +
+    '<div class="urgency-sel">' + [1, 2, 3, 4, 5].map(function(u) {
+      return '<button class="' + (data && data.urgency === u ? 'active' : '') + '" data-val="' + u + '" onclick="pickUrgency(this)">' + u + '</button>';
+    }).join('') + '</div>' +
+    '<label style="margin-top:8px">Notes</label>' +
+    '<input type="text" class="bm-notes" placeholder="Optional notes..." value="' + (data ? (data.notes || '') : '') + '"' + readonlyAttr + '>';
+  document.getElementById('bm-list').appendChild(div);
+}
+function pickBristol(el) {
+  if (isReadOnly) return;
+  el.parentElement.querySelectorAll('.bristol-btn').forEach(function(b) { b.classList.remove('active'); });
+  el.classList.add('active');
+}
+function pickUrgency(el) {
+  if (isReadOnly) return;
+  el.parentElement.querySelectorAll('button').forEach(function(b) { b.classList.remove('active'); });
+  el.classList.add('active');
+}
+
+// ===== MEDICATIONS =====
+function addMed(data) {
+  if (isReadOnly && !data) return;
+  var div = document.createElement('div');
+  div.className = 'med-row';
+  var settings = getSettings();
+  var options = (settings.savedMeds || []).map(function(m) { return '<option ' + (data && data.name === m ? 'selected' : '') + '>' + m + '</option>'; }).join('');
+  var readonlyAttr = isReadOnly ? ' disabled' : '';
+  div.innerHTML =
+    '<input type="text" class="med-name" placeholder="Medication" value="' + (data ? data.name || '' : '') + '" list="med-options"' + readonlyAttr + '>' +
+    '<datalist id="med-options">' + options + '</datalist>' +
+    '<input type="text" class="med-dose" placeholder="Dose" value="' + (data ? data.dose || '' : '') + '" style="flex:0 0 70px"' + readonlyAttr + '>' +
+    '<input type="time" class="med-time" value="' + (data ? data.time || '' : '') + '" style="flex:0 0 90px"' + readonlyAttr + '>' +
+    '<div class="med-helped">' +
+    '<button data-val="yes" onclick="pickHelped(this)" class="' + (data && data.helped === 'yes' ? 'active' : '') + '">👍</button>' +
+    '<button data-val="no" onclick="pickHelped(this)" class="' + (data && data.helped === 'no' ? 'active' : '') + '">👎</button>' +
+    '<button data-val="unsure" onclick="pickHelped(this)" class="' + (data && data.helped === 'unsure' ? 'active' : '') + '">🤷</button>' +
+    '</div>' +
+    (isReadOnly ? '' : '<button class="btn-sm" style="background:none;color:var(--danger);padding:4px" onclick="this.parentElement.remove()">✕</button>');
+  document.getElementById('med-list').appendChild(div);
+}
+function pickHelped(el) {
+  if (isReadOnly) return;
+  el.parentElement.querySelectorAll('button').forEach(function(b) { b.classList.remove('active'); });
+  el.classList.add('active');
+}
+
+// ===== PICKERS =====
+function pickSleep(el) {
+  if (isReadOnly) return;
+  el.parentElement.querySelectorAll('button').forEach(function(b) { b.classList.remove('active'); });
+  el.classList.add('active');
+}
+function pickExercise(el) {
+  if (isReadOnly) return;
+  el.parentElement.querySelectorAll('button').forEach(function(b) { b.classList.remove('active'); });
+  el.classList.add('active');
+}
+function pickMood(el) {
+  if (isReadOnly) return;
+  document.querySelectorAll('#mood-row .mood-btn').forEach(function(b) { b.classList.remove('active'); });
+  el.classList.add('active');
+}
+function pickStressSymp(el) {
+  if (isReadOnly) return;
+  el.parentElement.querySelectorAll('button').forEach(function(b) { b.classList.remove('active'); });
+  el.classList.add('active');
+}
+function updateStressEmoji() {
+  var v = document.getElementById('stress-level').value;
+  document.getElementById('stress-val').textContent = v + ' ' + STRESS_EMOJIS[v];
+}
+
+// ===== SAVE / LOAD =====
+function gatherData() {
+  var data = { date: document.getElementById('log-date').value };
+  data.bms = [];
+  document.querySelectorAll('.bm-entry').forEach(function(entry) {
+    var bm = {};
+    bm.time = entry.querySelector('.bm-time').value;
+    var bristol = entry.querySelector('.bristol-btn.active');
+    bm.bristol = bristol ? parseInt(bristol.dataset.val) : null;
+    bm.painBefore = parseInt(entry.querySelector('.bm-pain-before').value);
+    bm.painDuring = parseInt(entry.querySelector('.bm-pain-during').value);
+    bm.painAfter = parseInt(entry.querySelector('.bm-pain-after').value);
+    bm.blood = entry.querySelectorAll('.toggle')[0].classList.contains('on');
+    bm.mucus = entry.querySelectorAll('.toggle')[1].classList.contains('on');
+    var urg = entry.querySelector('.urgency-sel button.active');
+    bm.urgency = urg ? parseInt(urg.dataset.val) : null;
+    bm.notes = entry.querySelector('.bm-notes').value;
+    data.bms.push(bm);
+  });
+  data.symptoms = [];
+  document.querySelectorAll('#symptom-pills .pill.active').forEach(function(p) { data.symptoms.push(p.dataset.symptom); });
+  if (data.symptoms.includes('Abdominal pain')) {
+    data.painDetails = {
+      location: document.getElementById('pain-location').value,
+      worst: parseInt(document.getElementById('pain-worst').value),
+      hours: parseFloat(document.getElementById('pain-hours').value) || 0,
+      helped: Array.from(document.querySelectorAll('#pain-helped input:checked')).map(function(c) { return c.value; })
+    };
+  }
+  data.food = {};
+  ['breakfast', 'lunch', 'dinner', 'snacks'].forEach(function(m) {
+    data.food[m] = { time: document.getElementById('food-' + m + '-time').value, text: document.getElementById('food-' + m).value };
+  });
+  data.water = document.querySelectorAll('.water-btn.filled').length;
+  data.meds = [];
+  document.querySelectorAll('.med-row').forEach(function(r) {
+    data.meds.push({
+      name: r.querySelector('.med-name').value,
+      dose: r.querySelector('.med-dose').value,
+      time: r.querySelector('.med-time').value,
+      helped: r.querySelector('.med-helped .active') ? r.querySelector('.med-helped .active').dataset.val : null
+    });
+  });
+  data.sleep = {
+    hours: parseFloat(document.getElementById('sleep-hours').value) || null,
+    quality: document.querySelector('#sleep-quality .active') ? document.querySelector('#sleep-quality .active').dataset.val : null
+  };
+  data.exercise = {
+    intensity: document.querySelector('#exercise-intensity .active') ? document.querySelector('#exercise-intensity .active').dataset.val : null,
+    type: document.getElementById('exercise-type').value,
+    minutes: parseInt(document.getElementById('exercise-min').value) || null
+  };
+  data.stress = parseInt(document.getElementById('stress-level').value);
+  data.mood = document.querySelector('#mood-row .mood-btn.active') ? document.querySelector('#mood-row .mood-btn.active').dataset.val : null;
+  data.stressTrigger = document.getElementById('stress-trigger').value;
+  data.stressSymptoms = document.querySelector('#stress-symptoms .active') ? document.querySelector('#stress-symptoms .active').dataset.val : null;
+  data.notes = document.getElementById('daily-notes').value;
+  data.lastModified = new Date().toISOString();
+  return data;
+}
+
+function saveDay() {
+  if (isReadOnly) return;
+  var data = gatherData();
+  localStorage.setItem('gi-tracker-' + data.date, JSON.stringify(data));
+  saveToFirestore(data.date, data);
+  toast('✅ Saved!');
+}
+
+function loadDay() {
+  var date = document.getElementById('log-date').value;
+  var raw = localStorage.getItem('gi-tracker-' + date);
+  clearForm();
+  if (!raw) return;
+  var data = JSON.parse(raw);
+  document.getElementById('bm-list').innerHTML = '';
+  (data.bms || []).forEach(function(bm) { addBM(bm); });
+  document.querySelectorAll('#symptom-pills .pill').forEach(function(p) {
+    p.classList.toggle('active', (data.symptoms || []).includes(p.dataset.symptom));
+  });
+  togglePainDetails();
+  if (data.painDetails) {
+    document.getElementById('pain-location').value = data.painDetails.location || '';
+    document.getElementById('pain-worst').value = data.painDetails.worst || 0;
+    document.getElementById('pain-worst').nextElementSibling.textContent = data.painDetails.worst || 0;
+    document.getElementById('pain-hours').value = data.painDetails.hours || '';
+    document.querySelectorAll('#pain-helped input').forEach(function(c) { c.checked = (data.painDetails.helped || []).includes(c.value); });
+  }
+  ['breakfast', 'lunch', 'dinner', 'snacks'].forEach(function(m) {
+    if (data.food && data.food[m]) {
+      document.getElementById('food-' + m + '-time').value = data.food[m].time || '';
+      document.getElementById('food-' + m).value = data.food[m].text || '';
+    }
+  });
+  setWater(data.water || 0);
+  document.getElementById('med-list').innerHTML = '';
+  (data.meds || []).forEach(function(m) { addMed(m); });
+  document.getElementById('sleep-hours').value = data.sleep ? data.sleep.hours || '' : '';
+  if (data.sleep && data.sleep.quality) document.querySelectorAll('#sleep-quality button').forEach(function(b) { b.classList.toggle('active', b.dataset.val === data.sleep.quality); });
+  if (data.exercise && data.exercise.intensity) document.querySelectorAll('#exercise-intensity button').forEach(function(b) { b.classList.toggle('active', b.dataset.val === data.exercise.intensity); });
+  document.getElementById('exercise-type').value = data.exercise ? data.exercise.type || '' : '';
+  document.getElementById('exercise-min').value = data.exercise ? data.exercise.minutes || '' : '';
+  document.getElementById('stress-level').value = data.stress || 0;
+  updateStressEmoji();
+  if (data.mood) document.querySelectorAll('#mood-row .mood-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.val == data.mood); });
+  document.getElementById('stress-trigger').value = data.stressTrigger || '';
+  if (data.stressSymptoms) document.querySelectorAll('#stress-symptoms button').forEach(function(b) { b.classList.toggle('active', b.dataset.val === data.stressSymptoms); });
+  document.getElementById('daily-notes').value = data.notes || '';
+
+  // Make inputs read-only for non-patients
+  if (isReadOnly) {
+    document.querySelectorAll('#tab-log input, #tab-log select, #tab-log textarea').forEach(function(el) {
+      el.setAttribute('disabled', 'true');
+    });
+  }
+}
+
+function clearForm() {
+  document.getElementById('bm-list').innerHTML = '';
+  document.querySelectorAll('#symptom-pills .pill').forEach(function(p) { p.classList.remove('active'); });
+  document.getElementById('pain-details-box').classList.remove('show');
+  document.getElementById('pain-location').value = '';
+  document.getElementById('pain-worst').value = 0;
+  document.getElementById('pain-worst').nextElementSibling.textContent = '0';
+  document.getElementById('pain-hours').value = '';
+  document.querySelectorAll('#pain-helped input').forEach(function(c) { c.checked = false; });
+  ['breakfast', 'lunch', 'dinner', 'snacks'].forEach(function(m) {
+    document.getElementById('food-' + m + '-time').value = '';
+    document.getElementById('food-' + m).value = '';
+  });
+  setWater(0);
+  document.getElementById('med-list').innerHTML = '';
+  document.getElementById('sleep-hours').value = '';
+  document.querySelectorAll('#sleep-quality button, #exercise-intensity button, #mood-row .mood-btn, #stress-symptoms button').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('exercise-type').value = '';
+  document.getElementById('exercise-min').value = '';
+  document.getElementById('stress-level').value = 0;
+  updateStressEmoji();
+  document.getElementById('stress-trigger').value = '';
+  document.getElementById('daily-notes').value = '';
+}
+
+// ===== CALENDAR =====
+function renderCalendar() {
+  var grid = document.getElementById('cal-grid');
+  var title = document.getElementById('cal-title');
+  var months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  title.textContent = months[calMonth] + ' ' + calYear;
+  grid.innerHTML = '';
+  ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].forEach(function(d) {
+    var h = document.createElement('div');
+    h.className = 'cal-header'; h.textContent = d; grid.appendChild(h);
+  });
+  var first = new Date(calYear, calMonth, 1);
+  var lastDay = new Date(calYear, calMonth + 1, 0).getDate();
+  var startDay = first.getDay();
+  var today = new Date().toISOString().split('T')[0];
+  for (var i = 0; i < startDay; i++) {
+    var e = document.createElement('div');
+    e.className = 'cal-day empty'; grid.appendChild(e);
+  }
+  for (var d = 1; d <= lastDay; d++) {
+    var el = document.createElement('div');
+    el.className = 'cal-day';
+    el.textContent = d;
+    var dateStr = calYear + '-' + String(calMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+    if (dateStr === today) el.classList.add('today');
+    var raw = localStorage.getItem('gi-tracker-' + dateStr);
+    if (raw) {
+      var data = JSON.parse(raw);
+      var dot = document.createElement('div');
+      dot.className = 'dot';
+      var maxPain = getMaxPain(data);
+      if (maxPain <= 3) dot.classList.add('green');
+      else if (maxPain <= 6) dot.classList.add('yellow');
+      else dot.classList.add('red');
+      el.appendChild(dot);
+    }
+    (function(ds) {
+      el.onclick = function() {
+        document.getElementById('log-date').value = ds;
+        loadDay();
+        switchTab('log', document.querySelectorAll('nav button')[0]);
+      };
+    })(dateStr);
+    grid.appendChild(el);
+  }
+}
+function calNav(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+function getMaxPain(data) {
+  var max = 0;
+  if (data.painDetails && data.painDetails.worst) max = Math.max(max, data.painDetails.worst);
+  (data.bms || []).forEach(function(bm) {
+    max = Math.max(max, bm.painBefore || 0, bm.painDuring || 0, bm.painAfter || 0);
+  });
+  return max;
+}
+
+// ===== CHARTS =====
+function setChartRange(btn) {
+  document.querySelectorAll('#chart-range button').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  chartDays = parseInt(btn.dataset.days);
+  renderCharts();
+}
+function getDateRange(days) {
+  var dates = [];
+  var today = new Date();
+  for (var i = days - 1; i >= 0; i--) {
+    var d = new Date(today); d.setDate(d.getDate() - i);
+    dates.push(d.toISOString().split('T')[0]);
+  }
+  return dates;
+}
+function getDayData(date) {
+  var raw = localStorage.getItem('gi-tracker-' + date);
+  return raw ? JSON.parse(raw) : null;
+}
+
+function renderCharts() {
+  var dates = getDateRange(chartDays);
+  var labels = dates.map(function(d) { var p = d.split('-'); return p[1] + '/' + p[2]; });
+  var painData = dates.map(function(d) { var data = getDayData(d); return data ? getMaxPain(data) : null; });
+
+  if (charts.pain) charts.pain.destroy();
+  charts.pain = new Chart(document.getElementById('chart-pain'), {
+    type: 'line', data: { labels: labels, datasets: [{ label: 'Max Pain', data: painData, borderColor: '#0d9488', backgroundColor: 'rgba(13,148,136,.15)', fill: true, tension: .3, spanGaps: true }] },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 10 } }, plugins: { legend: { display: false } } }
+  });
+
+  var bristolCounts = [0, 0, 0, 0, 0, 0, 0];
+  dates.forEach(function(d) { var data = getDayData(d); (data && data.bms || []).forEach(function(bm) { if (bm.bristol) bristolCounts[bm.bristol - 1]++; }); });
+  if (charts.bristol) charts.bristol.destroy();
+  charts.bristol = new Chart(document.getElementById('chart-bristol'), {
+    type: 'bar', data: { labels: ['Type 1', 'Type 2', 'Type 3', 'Type 4', 'Type 5', 'Type 6', 'Type 7'], datasets: [{ label: 'Count', data: bristolCounts, backgroundColor: ['#854d0e', '#a16207', '#ca8a04', '#65a30d', '#eab308', '#f59e0b', '#3b82f6'] }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+  });
+
+  var scatterData = [];
+  dates.forEach(function(d) { var data = getDayData(d); if (data) scatterData.push({ x: data.stress || 0, y: getMaxPain(data) }); });
+  if (charts.scatter) charts.scatter.destroy();
+  charts.scatter = new Chart(document.getElementById('chart-scatter'), {
+    type: 'scatter', data: { datasets: [{ label: 'Stress vs Pain', data: scatterData, backgroundColor: 'rgba(13,148,136,.6)', pointRadius: 6 }] },
+    options: { responsive: true, maintainAspectRatio: false, scales: { x: { min: 0, max: 10, title: { display: true, text: 'Stress' } }, y: { min: 0, max: 10, title: { display: true, text: 'Pain' } } }, plugins: { legend: { display: false } } }
+  });
+
+  var sympCounts = {};
+  dates.forEach(function(d) { var data = getDayData(d); (data && data.symptoms || []).forEach(function(s) { sympCounts[s] = (sympCounts[s] || 0) + 1; }); });
+  var sympLabels = Object.keys(sympCounts).sort(function(a, b) { return sympCounts[b] - sympCounts[a]; });
+  if (charts.symptoms) charts.symptoms.destroy();
+  charts.symptoms = new Chart(document.getElementById('chart-symptoms'), {
+    type: 'bar', data: { labels: sympLabels, datasets: [{ label: 'Days', data: sympLabels.map(function(s) { return sympCounts[s]; }), backgroundColor: 'rgba(13,148,136,.7)' }] },
+    options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } }
+  });
+}
+
+// ===== SUMMARY =====
+function updateSummary() {
+  var weekStart = document.getElementById('summary-week').value;
+  if (!weekStart) return;
+  var dates = [];
+  for (var i = 0; i < 7; i++) {
+    var d = new Date(weekStart); d.setDate(d.getDate() + i);
+    dates.push(d.toISOString().split('T')[0]);
+  }
+  var totalBM = 0, painDays = 0, daysWithData = 0, totalPain = 0, diarrheaDays = 0;
+  var totalStress = 0, stressCount = 0, totalSleep = 0, sleepCount = 0;
+  var bestDay = null, bestPain = 11, worstDay = null, worstPain = -1;
+  var sympCounts = {};
+  dates.forEach(function(dateStr) {
+    var data = getDayData(dateStr);
+    if (!data) return;
+    daysWithData++;
+    totalBM += (data.bms || []).length;
+    var mp = getMaxPain(data);
+    if (mp > 0) { painDays++; totalPain += mp; }
+    if (mp < bestPain) { bestPain = mp; bestDay = dateStr; }
+    if (mp > worstPain) { worstPain = mp; worstDay = dateStr; }
+    var hasDiarrhea = (data.bms || []).some(function(bm) { return bm.bristol >= 6; });
+    if (hasDiarrhea) diarrheaDays++;
+    if (data.stress != null) { totalStress += data.stress; stressCount++; }
+    if (data.sleep && data.sleep.hours) { totalSleep += data.sleep.hours; sleepCount++; }
+    (data.symptoms || []).forEach(function(s) { sympCounts[s] = (sympCounts[s] || 0) + 1; });
+  });
+  var topSymptoms = Object.entries(sympCounts).sort(function(a, b) { return b[1] - a[1]; }).slice(0, 3).map(function(e) { return e[0]; }).join(', ') || 'None';
+  var avgPain = painDays > 0 ? (totalPain / painDays).toFixed(1) : '0';
+  var avgStress = stressCount > 0 ? (totalStress / stressCount).toFixed(1) : 'N/A';
+  var avgSleep = sleepCount > 0 ? (totalSleep / sleepCount).toFixed(1) : 'N/A';
+  var formatDate = function(d) { return d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : 'N/A'; };
+
+  var stats = document.getElementById('summary-stats');
+  stats.innerHTML =
+    '<div class="summary-stat"><span class="stat-label">Days with data</span><span class="stat-val">' + daysWithData + ' / 7</span></div>' +
+    '<div class="summary-stat"><span class="stat-label">Total bowel movements</span><span class="stat-val">' + totalBM + '</span></div>' +
+    '<div class="summary-stat"><span class="stat-label">Days with pain</span><span class="stat-val">' + painDays + ' / ' + daysWithData + '</span></div>' +
+    '<div class="summary-stat"><span class="stat-label">Average pain level</span><span class="stat-val">' + avgPain + ' / 10</span></div>' +
+    '<div class="summary-stat"><span class="stat-label">Days with diarrhea (Bristol 6-7)</span><span class="stat-val">' + diarrheaDays + '</span></div>' +
+    '<div class="summary-stat"><span class="stat-label">Most common symptoms</span><span class="stat-val">' + topSymptoms + '</span></div>' +
+    '<div class="summary-stat"><span class="stat-label">Average stress</span><span class="stat-val">' + avgStress + ' / 10</span></div>' +
+    '<div class="summary-stat"><span class="stat-label">Average sleep</span><span class="stat-val">' + avgSleep + ' hrs</span></div>' +
+    '<div class="summary-stat"><span class="stat-label">Best day</span><span class="stat-val">' + formatDate(bestDay) + ' (pain: ' + (bestPain > 10 ? 'N/A' : bestPain) + ')</span></div>' +
+    '<div class="summary-stat"><span class="stat-label">Worst day</span><span class="stat-val">' + formatDate(worstDay) + ' (pain: ' + (worstPain < 0 ? 'N/A' : worstPain) + ')</span></div>';
+  window._lastSummaryText = stats.innerText;
+}
+
+function printSummary() { window.print(); }
+function copySummary() {
+  var settings = getSettings();
+  var weekStart = document.getElementById('summary-week').value;
+  var text = 'GI Tracker Weekly Summary\nPatient: ' + settings.name + '\nDoctor: ' + settings.doctor + '\nWeek of: ' + weekStart + '\n\n';
+  text += window._lastSummaryText || document.getElementById('summary-stats').innerText;
+  navigator.clipboard.writeText(text).then(function() { toast('📋 Copied to clipboard!'); }).catch(function() { toast('❌ Copy failed'); });
+}
+function exportJSON() {
+  var all = {};
+  for (var i = 0; i < localStorage.length; i++) {
+    var k = localStorage.key(i);
+    if (k.startsWith('gi-tracker')) all[k] = JSON.parse(localStorage.getItem(k));
+  }
+  var blob = new Blob([JSON.stringify(all, null, 2)], { type: 'application/json' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'gi-tracker-backup.json'; a.click();
+  toast('💾 Exported!');
+}
+
+function exportClinicalReport() {
+  var settings = getSettings();
+  var weekStart = document.getElementById('summary-week').value;
+  var text = '═══════════════════════════════════════\n';
+  text += '         CLINICAL SUMMARY REPORT\n';
+  text += '═══════════════════════════════════════\n\n';
+  text += 'Patient: ' + settings.name + '\n';
+  text += 'DOB: ' + settings.dob + '\n';
+  text += 'Physician: ' + settings.doctor + '\n';
+  text += 'Report Period: Week of ' + weekStart + '\n';
+  text += 'Generated: ' + new Date().toLocaleDateString() + '\n\n';
+  text += '───────────────────────────────────────\n';
+  text += window._lastSummaryText || document.getElementById('summary-stats').innerText;
+  text += '\n───────────────────────────────────────\n';
+  text += '\nPrepared via GI Tracker v2.0\n';
+
+  var blob = new Blob([text], { type: 'text/plain' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'clinical-report-' + weekStart + '.txt'; a.click();
+  toast('🏥 Clinical report exported!');
+}
+
+// ===== SETTINGS =====
+function getSettings() {
+  var raw = localStorage.getItem('gi-tracker-settings');
+  return raw ? JSON.parse(raw) : { name: 'Dylan Byington', dob: '2010-06-23', doctor: 'Dr. David Dunkin, MD', appt: '', savedMeds: [], darkMode: false };
+}
+function saveSettings() {
+  var s = {
+    name: document.getElementById('set-name').value,
+    dob: document.getElementById('set-dob').value,
+    doctor: document.getElementById('set-doctor').value,
+    appt: document.getElementById('set-appt').value,
+    savedMeds: getSettings().savedMeds,
+    darkMode: document.getElementById('dark-toggle').classList.contains('on')
+  };
+  localStorage.setItem('gi-tracker-settings', JSON.stringify(s));
+  saveSettingsToFirestore(s);
+  toast('✅ Settings saved!');
+}
+function loadSettings() {
+  var s = getSettings();
+  document.getElementById('set-name').value = s.name;
+  document.getElementById('set-dob').value = s.dob;
+  document.getElementById('set-doctor').value = s.doctor;
+  document.getElementById('set-appt').value = s.appt || '';
+  if (s.darkMode) { document.body.classList.add('dark'); document.getElementById('dark-toggle').classList.add('on'); }
+  renderSavedMeds();
+  ['set-name', 'set-dob', 'set-doctor', 'set-appt'].forEach(function(id) {
+    document.getElementById(id).addEventListener('change', saveSettings);
+  });
+}
+function renderSavedMeds() {
+  var s = getSettings();
+  var list = document.getElementById('saved-meds-list');
+  list.innerHTML = '';
+  (s.savedMeds || []).forEach(function(m, i) {
+    var div = document.createElement('div');
+    div.className = 'saved-med';
+    div.innerHTML = '<span>' + escHtml(m) + '</span><button class="btn-sm" style="background:none;color:var(--danger)" onclick="removeSavedMed(' + i + ')">✕</button>';
+    list.appendChild(div);
+  });
+}
+function addSavedMed() {
+  var input = document.getElementById('new-saved-med');
+  if (!input.value.trim()) return;
+  var s = getSettings();
+  s.savedMeds = s.savedMeds || [];
+  s.savedMeds.push(input.value.trim());
+  localStorage.setItem('gi-tracker-settings', JSON.stringify(s));
+  saveSettingsToFirestore(s);
+  input.value = '';
+  renderSavedMeds();
+}
+function removeSavedMed(i) {
+  var s = getSettings();
+  s.savedMeds.splice(i, 1);
+  localStorage.setItem('gi-tracker-settings', JSON.stringify(s));
+  saveSettingsToFirestore(s);
+  renderSavedMeds();
+}
+function toggleDark() {
+  document.body.classList.toggle('dark');
+  document.getElementById('dark-toggle').classList.toggle('on');
+  saveSettings();
+}
+function importJSON(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      var data = JSON.parse(ev.target.result);
+      Object.entries(data).forEach(function(entry) { localStorage.setItem(entry[0], JSON.stringify(entry[1])); });
+      // Also push to Firestore
+      if (patientId && !isReadOnly) {
+        Object.entries(data).forEach(function(entry) {
+          var key = entry[0];
+          if (key.startsWith('gi-tracker-') && key !== 'gi-tracker-settings') {
+            var date = key.replace('gi-tracker-', '');
+            db.collection('patients').doc(patientId).collection('logs').doc(date).set(entry[1]).catch(function() {});
+          }
+        });
+      }
+      toast('✅ Imported! Reloading...');
+      setTimeout(function() { location.reload(); }, 1000);
+    } catch (err) { toast('❌ Invalid JSON file'); }
+  };
+  reader.readAsText(file);
+}
+function clearAllData() {
+  if (!confirm('Are you sure you want to delete ALL data? This cannot be undone!')) return;
+  if (!confirm('Really? All your logged data will be permanently deleted.')) return;
+  var keys = [];
+  for (var i = 0; i < localStorage.length; i++) {
+    var k = localStorage.key(i);
+    if (k.startsWith('gi-tracker')) keys.push(k);
+  }
+  keys.forEach(function(k) { localStorage.removeItem(k); });
+  // Also clear from Firestore
+  if (patientId && !isReadOnly) {
+    db.collection('patients').doc(patientId).collection('logs').get().then(function(snap) {
+      snap.forEach(function(doc) { doc.ref.delete(); });
+    }).catch(function() {});
+  }
+  toast('🗑️ All data cleared');
+  setTimeout(function() { location.reload(); }, 1000);
+}
+
+// ===== KEYBOARD: Enter to submit on auth forms =====
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter') return;
+  if (document.getElementById('auth-screen').classList.contains('active')) {
+    if (document.getElementById('login-form').style.display !== 'none') doLogin();
+    else doRegister();
+  }
+});
+
+// ===== ONLINE/OFFLINE DETECTION =====
+window.addEventListener('online', function() {
+  if (currentUser && patientId) {
+    setSyncStatus('syncing');
+    syncFromFirestore();
+  }
+});
+window.addEventListener('offline', function() { setSyncStatus('offline'); });
+</script>
+</body>
+</html>
